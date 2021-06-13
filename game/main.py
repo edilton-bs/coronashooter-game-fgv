@@ -4,7 +4,7 @@ from pygame.locals import (KEYDOWN,
                            K_LEFT,
                            K_RIGHT,
                            QUIT,
-                           K_ESCAPE, K_UP, K_DOWN, K_RCTRL, K_LCTRL
+                           K_ESCAPE, K_UP, K_DOWN, K_RCTRL, K_s, K_k, K_LCTRL
                            )
 from fundo import Fundo
 from elementos import ElementoSprite
@@ -13,8 +13,10 @@ from sys import exit
 
 
 class Jogo:
-    def __init__(self, size=(1000, 1000), fullscreen=False):
+    def __init__(self, size=(800, 660), fullscreen=False):
         self.elementos = {}
+        self.partida_iniciada = False
+        self.jogador_perdeu = False
         pygame.init()
         flags = pygame.DOUBLEBUF
         if fullscreen:
@@ -32,13 +34,28 @@ class Jogo:
         pygame.display.set_caption('Corona Shooter')
         self.run = True
 
-
     def escreve_placar(self):
         vidas = self.fonte.render(f'vidas: {self.jogador.get_lives()*"❤"}', 1, (255, 255, 0), (0, 0, 0))
         score = self.fonte.render(f'Score: {self.jogador.pontos}', 1, (255, 255, 0), (0, 0, 0))
         self.tela.blit(vidas, (30, 30))
         self.tela.blit(score, (self.screen_size[0] - 300, 30))
-
+        
+    def msg_fim_de_jogo(self):
+        if self.jogador_perdeu == True:
+            msg1 = "FIM DE JOGO"
+            msg2 = "Pressione 'S' para jogar uma nova partida"
+            
+            texto1 = self.fonte.render(msg1, True, (255,225,0))
+            texto2 = self.fonte.render(msg2, True, (255,255,255))
+            self.tela.blit(texto1, (300,270))
+            self.tela.blit(texto2, (10,330))
+    def menu_inicial(self):
+        if self.partida_iniciada == False:
+            msg = "Pressione 'K' para iniciar a partida"
+            texto = self.fonte.render(msg, True, (255,255,0))
+            self.tela.blit(texto, (30,200))
+            
+        
     def manutenção(self):
         r = random.randint(0, 100)
         x = random.randint(1, self.screen_size[0])
@@ -101,14 +118,19 @@ class Jogo:
         self.verifica_impactos(self.jogador, self.elementos["tiros_inimigo"],
                                self.jogador.alvejado)
         if self.jogador.morto:
-            self.run = False
+            # self.run = False
+            self.jogador_perdeu = True
+            self.jogador.kill()
+            
             return
 
         # Verifica se o personagem trombou em algum inimigo
         self.verifica_impactos(self.jogador, self.elementos["virii"],
                                self.jogador.colisão)
         if self.jogador.morto:
-            self.run = False
+            # self.run = False
+            self.jogador_perdeu = True
+            self.jogador.kill()
             return
         # Verifica se o personagem atingiu algum alvo.
         hitted = self.verifica_impactos(self.elementos["tiros"],
@@ -132,18 +154,27 @@ class Jogo:
                 pygame.quit()
                 exit()
                 
-            elif key in (K_LCTRL, K_RCTRL):
+            elif key in (K_LCTRL, K_RCTRL) and self.partida_iniciada:
                 self.interval = 0
                 self.jogador.atira(self.elementos["tiros"])
-            elif key == K_UP:
+            elif key == K_UP and self.partida_iniciada:
                 self.jogador.accel_top()
-            elif key == K_DOWN:
+            elif key == K_DOWN and self.partida_iniciada:
                 self.jogador.accel_bottom()
-            elif key == K_RIGHT:
+            elif key == K_RIGHT and self.partida_iniciada:
                 self.jogador.accel_right()
-            elif key == K_LEFT:
+            elif key == K_LEFT and self.partida_iniciada:
                 self.jogador.accel_left()
-
+           
+            elif key == K_s:
+                J = Jogo(fullscreen=False)
+                J.partida_iniciada = True
+                J.loop()
+            elif key == K_k:
+                self.partida_iniciada = True
+                
+                
+               
         keys = pygame.key.get_pressed()
         if self.interval > 10:
             self.interval = 0
@@ -154,22 +185,30 @@ class Jogo:
         clock = pygame.time.Clock()
         dt = 16
         self.elementos['virii'] = pygame.sprite.RenderPlain(Virus([120, 50]))
-        self.jogador = Jogador([200, 400], 5)
+        self.jogador = Jogador([400, 400], 5)
         self.elementos['jogador'] = pygame.sprite.RenderPlain(self.jogador)
         self.elementos['tiros'] = pygame.sprite.RenderPlain()
         self.elementos['tiros_inimigo'] = pygame.sprite.RenderPlain()
         while self.run:
             clock.tick(1000 / dt)
-
+           
             self.trata_eventos()
             self.ação_elemento()
-            self.manutenção()
+            
+            if self.partida_iniciada:
+                self.manutenção()
+            
+           
+                
             # Atualiza Elementos
             self.atualiza_elementos(dt)
 
             # Desenhe no back buffer
             self.desenha_elementos()
             self.escreve_placar()
+            self.menu_inicial()
+            self.msg_fim_de_jogo()
+            
             # texto = self.fonte.render(f"Vidas: {self.jogador.get_lives()}", True, (255, 255, 255), (0, 0, 0))
 
             pygame.display.flip()
