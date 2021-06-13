@@ -9,6 +9,7 @@ from pygame.locals import (KEYDOWN,
 from fundo import Fundo
 from elementos import ElementoSprite
 import random
+from sys import exit
 
 
 class Jogo:
@@ -121,11 +122,16 @@ class Jogo:
         event = pygame.event.poll()
         if event.type == pygame.QUIT:
             self.run = False
+            pygame.quit()
+            exit()
 
         if event.type in (KEYDOWN, KEYUP):
             key = event.key
             if key == K_ESCAPE:
                 self.run = False
+                pygame.quit()
+                exit()
+                
             elif key in (K_LCTRL, K_RCTRL):
                 self.interval = 0
                 self.jogador.atira(self.elementos["tiros"])
