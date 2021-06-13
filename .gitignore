@@ -1,2 +1,5 @@
 #arquivos do spyder
 .spyproject/config
+__pycache__
+
+
