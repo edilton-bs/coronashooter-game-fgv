@@ -3,8 +3,10 @@ from pygame.locals import (KEYDOWN,
                            KEYUP,
                            K_LEFT,
                            K_RIGHT,
-                           QUIT,
-                           K_ESCAPE, K_UP, K_DOWN, K_RCTRL, K_s, K_k, K_m, K_LCTRL
+                           QUIT, 
+                           K_ESCAPE, 
+                           K_UP, K_DOWN, K_RCTRL, K_s, K_k, K_m, K_LCTRL, K_LEFTBRACKET, K_RIGHTBRACKET
+                           
                            )
 from fundo import Fundo
 from elementos import ElementoSprite
@@ -28,11 +30,14 @@ class Jogo:
         self.interval = 0
         self.nivel = 0
         self.fonte = pygame.font.SysFont("monospace", 32)
-        # pygame.mixer.music.load('sons/space-syndrome.wav')
-        # pygame.mixer.music.play(-1)
+        pygame.mixer.music.load('sons/musica.wav')
+        self.gameover = pygame.mixer.Sound('sons/game-over.wav')
+        pygame.mixer.music.play(-1)
         self.explosão = pygame.mixer.Sound('sons/explosion.wav')
-        # pygame.mixer.music.play(-1)
+        pygame.mixer.music.play(-1)
+        
         self.music = True
+        self.anti_loop  = False
 
         self.screen_size = self.tela.get_size()
         pygame.mouse.set_visible(0)
@@ -59,13 +64,17 @@ class Jogo:
         pygame.mixer.music.set_volume(volume)
 
     def escreve_placar(self):
-        vidas = self.fonte.render(f'vidas: {self.jogador.get_lives()*"❤"}', 1, (255, 255, 0), (0, 0, 0))
+        vidas = self.fonte.render(f'vidas: {self.jogador.get_lives()*"#"}', 1, (255, 255, 0), (0, 0, 0))
         score = self.fonte.render(f'Score: {self.jogador.pontos}', 1, (255, 255, 0), (0, 0, 0))
         self.tela.blit(vidas, (30, 30))
         self.tela.blit(score, (self.screen_size[0] - 300, 30))
         
     def msg_fim_de_jogo(self):
         if self.jogador_perdeu == True:
+            if self.anti_loop  == False:
+                pygame.mixer.Sound.play(self.gameover)
+                pygame.mixer.music.pause()
+                self.anti_loop = True
             msg1 = "FIM DE JOGO"
             msg2 = "Pressione 'S' para jogar uma nova partida"
             
@@ -145,7 +154,7 @@ class Jogo:
             # self.run = False
             self.jogador_perdeu = True
             self.jogador.kill()
-            pygame.mixer.Sound.play(self.explosão)
+            
            
             
             return
@@ -157,7 +166,7 @@ class Jogo:
             # self.run = False
             self.jogador_perdeu = True
             self.jogador.kill()
-            pygame.mixer.Sound.play(self.explosão)
+            
             return
         # Verifica se o personagem atingiu algum alvo.
         hitted = self.verifica_impactos(self.elementos["tiros"],
@@ -254,6 +263,7 @@ class Nave(ElementoSprite):
             image = "seringa.png"
         super().__init__(image, position, speed, new_size)
         self.set_lives(lives)
+        self.coronakill = pygame.mixer.Sound('sons/coronakill.wav')
 
     def get_lives(self):
         return self.lives
@@ -275,12 +285,15 @@ class Nave(ElementoSprite):
     def alvejado(self):
         if self.get_lives() <= 0:
             self.kill()
+            pygame.mixer.Sound.play(self.coronakill)
         else:
             self.set_lives(self.get_lives() - 1)
+            
 
     @property
     def morto(self):
         return self.get_lives() == 0
+        
 
     def accel_top(self):
         speed = self.get_speed()
