@@ -20,6 +20,7 @@ class Jogo:
         self.elementos = {}
         self.partida_iniciada = False
         self.jogador_perdeu = False
+        self.nivel = 0
         pygame.init()
         flags = pygame.DOUBLEBUF
         if fullscreen:
@@ -34,6 +35,8 @@ class Jogo:
         self.gameover = pygame.mixer.Sound('sons/game-over.wav')
         pygame.mixer.music.play(-1)
         self.explosão = pygame.mixer.Sound('sons/explosion.wav')
+        self.tiro = pygame.mixer.Sound('sons/tiro.wav')
+        self.rajada_tiro = pygame.mixer.Sound('sons/rajada_tiro.wav')
         pygame.mixer.music.play(-1)
         
         self.music = True
@@ -63,11 +66,16 @@ class Jogo:
             volume = 0.1
         pygame.mixer.music.set_volume(volume)
 
-    def escreve_placar(self):
+    def painel_jogador(self):
+        nivel = int(self.nivel + self.jogador.get_pontos()/500)
+        
+        
         vidas = self.fonte.render(f'vidas: {self.jogador.get_lives()*"#"}', 1, (255, 255, 0), (0, 0, 0))
         score = self.fonte.render(f'Score: {self.jogador.pontos}', 1, (255, 255, 0), (0, 0, 0))
+        nivel = self.fonte.render(f'Nivel: {nivel}', 1, (255, 255, 0), (0, 0, 0))
         self.tela.blit(vidas, (30, 30))
-        self.tela.blit(score, (self.screen_size[0] - 300, 30))
+        self.tela.blit(score, (self.screen_size[0] - 450, 30))
+        self.tela.blit(nivel, (self.screen_size[0] - 200, 30))
         
     def msg_fim_de_jogo(self):
         if self.jogador_perdeu == True:
@@ -83,18 +91,22 @@ class Jogo:
             self.tela.blit(texto1, (300,270))
             self.tela.blit(texto2, (10,330))
     def menu_inicial(self):
-        if self.partida_iniciada == False:
+        if self.partida_iniciada == False and self.jogador_perdeu == False:
             msg = "Pressione 'K' para iniciar a partida"
             texto = self.fonte.render(msg, True, (255,255,0))
-            self.tela.blit(texto, (30,200))
-            
-        
+            self.tela.blit(texto, (35,200))
+                
     def manutenção(self):
+        pontos = self.jogador.get_pontos()
         r = random.randint(0, 100)
         x = random.randint(1, self.screen_size[0])
         virii = self.elementos["virii"]
         if r > (10 * len(virii)):
             enemy = Virus([0, 0])
+            
+            #virus ficam mais resistentes
+            enemy.set_lives(pontos/100+1)
+            
             size = enemy.get_size()
             enemy.set_pos([min(max(x, size[0] / 2), self.screen_size[0] - size[0] / 2), size[1] / 2])
             colisores = pygame.sprite.spritecollide(enemy, virii, False)
@@ -153,6 +165,7 @@ class Jogo:
         if self.jogador.morto:
             # self.run = False
             self.jogador_perdeu = True
+            self.partida_iniciada = False
             self.jogador.kill()
             
            
@@ -165,6 +178,7 @@ class Jogo:
         if self.jogador.morto:
             # self.run = False
             self.jogador_perdeu = True
+            self.partida_iniciada = False
             self.jogador.kill()
             
             return
@@ -193,6 +207,7 @@ class Jogo:
             elif key in (K_LCTRL, K_RCTRL) and self.partida_iniciada:
                 self.interval = 0
                 self.jogador.atira(self.elementos["tiros"])
+                pygame.mixer.Sound.play(self.tiro)
             elif key == K_UP and self.partida_iniciada:
                 self.jogador.accel_top()
             elif key == K_DOWN and self.partida_iniciada:
@@ -217,17 +232,18 @@ class Jogo:
                 
                 
                
-        keys = pygame.key.get_pressed()
-        if self.interval > 10:
-            self.interval = 0
-            if keys[K_RCTRL] or keys[K_LCTRL]:
-                self.jogador.atira(self.elementos["tiros"])
+        # keys = pygame.key.get_pressed()
+        # if self.interval > 10:
+        #     self.interval = 0
+        #     if keys[K_RCTRL] or keys[K_LCTRL]:
+        #         # self.jogador.atira(self.elementos["tiros"])
+        #         pygame.mixer.Sound.play(self.tiro)
 
     def loop(self):
         clock = pygame.time.Clock()
         dt = 16
-        self.elementos['virii'] = pygame.sprite.RenderPlain(Virus([120, 50]))
         self.jogador = Jogador([400, 400], 5)
+        self.elementos['virii'] = pygame.sprite.RenderPlain(Virus([120, 50]))
         self.elementos['jogador'] = pygame.sprite.RenderPlain(self.jogador)
         self.elementos['tiros'] = pygame.sprite.RenderPlain()
         self.elementos['tiros_inimigo'] = pygame.sprite.RenderPlain()
@@ -247,7 +263,7 @@ class Jogo:
 
             # Desenhe no back buffer
             self.desenha_elementos()
-            self.escreve_placar()
+            self.painel_jogador()
             self.menu_inicial()
             self.msg_fim_de_jogo()
             
@@ -314,10 +330,12 @@ class Nave(ElementoSprite):
 
 class Virus(Nave):
     def __init__(self, position, lives=1, speed=None, image=None, size=(100, 100)):
+        
         if not image:
             image = "virus.png"
         super().__init__(position, lives, speed, image, size)
-
+        
+        
 
 class Jogador(Nave):
     """
