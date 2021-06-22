@@ -1,18 +1,19 @@
 import pygame
+import time
 from pygame.locals import (KEYDOWN,
                            KEYUP,
                            K_LEFT,
                            K_RIGHT,
                            QUIT, 
                            K_ESCAPE, 
-                           K_UP, K_DOWN, K_RCTRL, K_s, K_k, K_m, K_LCTRL, K_LEFTBRACKET, K_RIGHTBRACKET
+                           K_UP, K_DOWN, K_RCTRL, K_s, K_k, K_m, K_p, K_LCTRL, K_LEFTBRACKET, K_RIGHTBRACKET
                            
                            )
 from fundo import Fundo
 from elementos import ElementoSprite
 import random
 from sys import exit
-from  time import sleep
+
 
 
 class Jogo:
@@ -21,6 +22,7 @@ class Jogo:
         self.partida_iniciada = False
         self.jogador_perdeu = False
         self.nivel = 0
+        self.pause = False
         pygame.init()
         flags = pygame.DOUBLEBUF
         if fullscreen:
@@ -29,14 +31,11 @@ class Jogo:
         self.fundo = Fundo()
         self.jogador = None
         self.interval = 0
-        self.nivel = 0
         self.fonte = pygame.font.SysFont("monospace", 32)
         pygame.mixer.music.load('sons/musica.wav')
         self.gameover = pygame.mixer.Sound('sons/game-over.wav')
         pygame.mixer.music.play(-1)
-        self.explosão = pygame.mixer.Sound('sons/explosion.wav')
         self.tiro = pygame.mixer.Sound('sons/tiro.wav')
-        self.rajada_tiro = pygame.mixer.Sound('sons/rajada_tiro.wav')
         pygame.mixer.music.play(-1)
         
         self.music = True
@@ -67,15 +66,17 @@ class Jogo:
         pygame.mixer.music.set_volume(volume)
 
     def painel_jogador(self):
-        nivel = int(self.nivel + self.jogador.get_pontos()/500)
         
+       
+        self.nivel = self.jogador.get_pontos()/500
         
         vidas = self.fonte.render(f'vidas: {self.jogador.get_lives()*"#"}', 1, (255, 255, 0), (0, 0, 0))
         score = self.fonte.render(f'Score: {self.jogador.pontos}', 1, (255, 255, 0), (0, 0, 0))
-        nivel = self.fonte.render(f'Nivel: {nivel}', 1, (255, 255, 0), (0, 0, 0))
+        nivel = self.fonte.render(f'Nivel: {self.nivel}', 1, (255, 255, 0), (0, 0, 0))
         self.tela.blit(vidas, (30, 30))
         self.tela.blit(score, (self.screen_size[0] - 450, 30))
         self.tela.blit(nivel, (self.screen_size[0] - 200, 30))
+        
         
     def msg_fim_de_jogo(self):
         if self.jogador_perdeu == True:
@@ -95,7 +96,11 @@ class Jogo:
             msg = "Pressione 'K' para iniciar a partida"
             texto = self.fonte.render(msg, True, (255,255,0))
             self.tela.blit(texto, (35,200))
-                
+    def msg_pause(self):
+        if self.pause == True:
+            msg = "JOGO PAUSADO"
+            texto1 = self.fonte.render(msg, True, (255,225,0))
+            self.tela.blit(texto1,(300, 200))
     def manutenção(self):
         pontos = self.jogador.get_pontos()
         r = random.randint(0, 100)
@@ -105,15 +110,52 @@ class Jogo:
             enemy = Virus([0, 0])
             
             #virus ficam mais resistentes
-            enemy.set_lives(pontos/100+1)
+            enemy.set_lives(pontos/500+1)
+            
+            ac = self.jogador.get_pontos()/1500
+            if self.nivel >= 0:
+                enemy.acceleration = [ac,ac]
+                
+                pos = list(enemy.get_pos())
+                enemy.accel_bottom()
+                if 0<pos[1]<30:
+                    enemy.acceleration = [1,1]
+                    enemy.accel_left()
+                if pos[1] >= 90:
+                    enemy.acceleration = [1,1]
+                    enemy.accel_right()
             
             size = enemy.get_size()
+            
             enemy.set_pos([min(max(x, size[0] / 2), self.screen_size[0] - size[0] / 2), size[1] / 2])
+            
             colisores = pygame.sprite.spritecollide(enemy, virii, False)
             if colisores:
                 return
             self.elementos["virii"].add(enemy)
-
+            
+            #movimento aleatótio dos vírus
+            for enemy in virii:
+                k = random.randint(1,100)
+                if 1<=k<50:
+                    enemy.acceleration = [0.3,0.3]
+                    enemy.accel_left()
+                if 40<=k<70 :
+                    enemy.acceleration = [0.3,0.3]
+                    enemy.accel_right()
+                
+                pos = list(enemy.get_pos())
+                
+                
+            #     if r < 50:
+            #         enemy.acceleration = [1, 1]
+            #         en.accel_left()
+        # if self.nivel >= 1 and r <= 30:
+        #     enemy2 = Virus([0, 0])
+        #     enemy2.set_lives(pontos/500+1)
+        #     enemy2.acceleration = [1,1]
+            
+            
     def muda_nivel(self):
         xp = self.jogador.get_pontos()
         if xp > 10 and self.level == 0:
@@ -121,7 +163,7 @@ class Jogo:
             self.nivel = 1
             self.jogador.set_lives(self.jogador.get_lives() + 3)
         elif xp > 50 and self.level == 1:
-            self.fundo = Fundo("tile3.png")
+            self.fundo = Fundo("tile3.phunter.update(self.jogador)ng")
             self.nivel = 2
             self.jogador.set_lives(self.player.get_lives() + 6)
 
@@ -216,6 +258,8 @@ class Jogo:
                 self.jogador.accel_right()
             elif key == K_LEFT and self.partida_iniciada:
                 self.jogador.accel_left()
+            elif key == K_p and self.partida_iniciada:
+                self.pause = not self.pause
            
             elif key == K_s:
                 J = Jogo(fullscreen=False)
@@ -232,21 +276,23 @@ class Jogo:
                 
                 
                
-        # keys = pygame.key.get_pressed()
-        # if self.interval > 10:
-        #     self.interval = 0
-        #     if keys[K_RCTRL] or keys[K_LCTRL]:
-        #         # self.jogador.atira(self.elementos["tiros"])
-        #         pygame.mixer.Sound.play(self.tiro)
+        keys = pygame.key.get_pressed()
+        if self.interval > 10:
+            self.interval = 0
+            if keys[K_RCTRL] or keys[K_LCTRL]:
+                self.jogador.atira(self.elementos["tiros"])
+                pygame.mixer.Sound.play(self.tiro)
 
     def loop(self):
         clock = pygame.time.Clock()
         dt = 16
         self.jogador = Jogador([400, 400], 5)
         self.elementos['virii'] = pygame.sprite.RenderPlain(Virus([120, 50]))
+        self.elementos['huns'] = pygame.sprite.RenderPlain(Virus([120, 50]))
         self.elementos['jogador'] = pygame.sprite.RenderPlain(self.jogador)
         self.elementos['tiros'] = pygame.sprite.RenderPlain()
         self.elementos['tiros_inimigo'] = pygame.sprite.RenderPlain()
+        
         while self.run:
             clock.tick(1000 / dt)
            
@@ -259,13 +305,16 @@ class Jogo:
            
                 
             # Atualiza Elementos
-            self.atualiza_elementos(dt)
+            if self.pause == False:
+                self.atualiza_elementos(dt)
 
             # Desenhe no back buffer
             self.desenha_elementos()
             self.painel_jogador()
             self.menu_inicial()
             self.msg_fim_de_jogo()
+            self.msg_pause()
+            
             
             # texto = self.fonte.render(f"Vidas: {self.jogador.get_lives()}", True, (255, 255, 255), (0, 0, 0))
 
@@ -274,7 +323,9 @@ class Jogo:
 
 class Nave(ElementoSprite):
     def __init__(self, position, lives=0, speed=[0, 0], image=None, new_size=[83, 248]):
+        
         self.acceleration = [3, 3]
+        
         if not image:
             image = "seringa.png"
         super().__init__(image, position, speed, new_size)
@@ -329,12 +380,13 @@ class Nave(ElementoSprite):
 
 
 class Virus(Nave):
-    def __init__(self, position, lives=1, speed=None, image=None, size=(100, 100)):
-        
+    def __init__(self, position, lives=1, speed=None, image=None, size=(60, 60)):
         if not image:
             image = "virus.png"
         super().__init__(position, lives, speed, image, size)
+       
         
+    
         
 
 class Jogador(Nave):
@@ -348,16 +400,18 @@ class Jogador(Nave):
     das outras.
     """
 
-    def __init__(self, position, lives=10, image=None, new_size=[83, 248]):
+    def __init__(self, position, lives=10, image=None, new_size=[30, 120]):
         if not image:
             image = "seringa.png"
         super().__init__(position, lives, [0, 0], image, new_size)
         self.pontos = 0
+        
 
     def update(self, dt):
         move_speed = (self.speed[0] * dt / 16,
                       self.speed[1] * dt / 16)
         self.rect = self.rect.move(move_speed)
+        
 
         if (self.rect.right > self.area.right):
             self.rect.right = self.area.right
@@ -417,10 +471,10 @@ class Jogador(Nave):
 
 
 class Tiro(ElementoSprite):
-    def __init__(self, position, speed=None, image=None, list=None):
+    def __init__(self, position, speed=None, image=None, list=None, new_size=[30,30]):
         if not image:
             image = "tiro.png"
-        super().__init__(image, position, speed)
+        super().__init__(image, position, speed, new_size)
         if list is not None:
             self.add(list)
 
