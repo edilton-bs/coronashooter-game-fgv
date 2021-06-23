@@ -70,7 +70,7 @@ class Jogo:
         vida = self.jogador.get_lives()
         hp = pygame.image.load('imagens/coracao.png')
         hp = pygame.transform.scale(hp, (30, 30))
-        # hp = pygame.display.set_icon(hp)
+        
         for i in range(1, vida+1):
             
             self.tela.blit(hp, (i*30, 10))
@@ -80,10 +80,10 @@ class Jogo:
         self.nivel = int(self.jogador.get_pontos()/500)
         
         
-        # vidas = self.fonte.render(f'vidas: {self.jogador.get_lives()*b}', 1, (255, 255, 0), (0, 0, 0))
+        
         score = self.fonte.render(f'Score: {self.jogador.pontos}', 1, (255, 255, 0), (0, 0, 0))
         nivel = self.fonte.render(f'Nivel: {self.nivel}', 1, (255, 255, 0), (0, 0, 0))
-        # self.tela.blit(vidas, (30, 30))
+        
         self.tela.blit(score, (self.screen_size[0] - 450, 30))
         self.tela.blit(nivel, (self.screen_size[0] - 200, 30))
         
@@ -167,11 +167,7 @@ class Jogo:
             self.fundo = Fundo("space1.png")
         if self.nivel % 2 > 0 and self.nivel > 0:
             self.fundo = Fundo("space.png")
-            # self.jogador.set_lives(self.jogador.get_lives() + 3)
-        # elif xp > 50 and self.level == 1:
-            # self.fundo = Fundo("tile3.phunter.update(self.jogador)ng")
-        #     self.nivel = 2
-        #     self.jogador.set_lives(self.player.get_lives() + 6)
+       
 
     def atualiza_elementos(self, dt):
         self.fundo.update(dt)
@@ -327,9 +323,6 @@ class Jogo:
             self.msg_fim_de_jogo()
             self.msg_pause()
             self.muda_nivel()
-            
-            
-            # texto = self.fonte.render(f"Vidas: {self.jogador.get_lives()}", True, (255, 255, 255), (0, 0, 0))
 
             pygame.display.flip()
 
