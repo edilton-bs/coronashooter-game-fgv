@@ -8,7 +8,7 @@ class Fundo:
     Esta classe cria o fundo do jogo
     """
 
-    def __init__(self, image="space.png"):
+    def __init__(self, image="space2.png"):
         """
         Desenha o fundo da tela
         """

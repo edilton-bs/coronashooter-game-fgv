@@ -67,13 +67,23 @@ class Jogo:
 
     def painel_jogador(self):
         
-       
-        self.nivel = self.jogador.get_pontos()/500
+        vida = self.jogador.get_lives()
+        hp = pygame.image.load('imagens/coracao.png')
+        hp = pygame.transform.scale(hp, (30, 30))
+        # hp = pygame.display.set_icon(hp)
+        for i in range(1, vida+1):
+            
+            self.tela.blit(hp, (i*30, 10))
+           
         
-        vidas = self.fonte.render(f'vidas: {self.jogador.get_lives()*"#"}', 1, (255, 255, 0), (0, 0, 0))
+        
+        self.nivel = int(self.jogador.get_pontos()/500)
+        
+        
+        # vidas = self.fonte.render(f'vidas: {self.jogador.get_lives()*b}', 1, (255, 255, 0), (0, 0, 0))
         score = self.fonte.render(f'Score: {self.jogador.pontos}', 1, (255, 255, 0), (0, 0, 0))
         nivel = self.fonte.render(f'Nivel: {self.nivel}', 1, (255, 255, 0), (0, 0, 0))
-        self.tela.blit(vidas, (30, 30))
+        # self.tela.blit(vidas, (30, 30))
         self.tela.blit(score, (self.screen_size[0] - 450, 30))
         self.tela.blit(nivel, (self.screen_size[0] - 200, 30))
         
@@ -106,24 +116,31 @@ class Jogo:
         r = random.randint(0, 100)
         x = random.randint(1, self.screen_size[0])
         virii = self.elementos["virii"]
+        coracao = self.elementos["coracoes"]
+    
+        if self.jogador.get_lives() == 1:
+            hp = Vida([0,0])
+           
+            size2 = hp.get_size()
+            
+            hp.set_pos([min(max(x, size2[0] / 2), self.screen_size[0] - size2[0] / 2), size2[1] / 2])
+            
+            colisores = pygame.sprite.spritecollide(hp, coracao, False)
+            
+            if len(self.elementos["coracoes"]) < 1:
+                self.elementos["coracoes"].add(hp)
+            
+            
         if r > (10 * len(virii)):
             enemy = Virus([0, 0])
             
             #virus ficam mais resistentes
             enemy.set_lives(pontos/500+1)
             
-            ac = self.jogador.get_pontos()/1500
+            ac = 0.4+self.jogador.get_pontos()/1000
             if self.nivel >= 0:
                 enemy.acceleration = [ac,ac]
                 
-                pos = list(enemy.get_pos())
-                enemy.accel_bottom()
-                if 0<pos[1]<30:
-                    enemy.acceleration = [1,1]
-                    enemy.accel_left()
-                if pos[1] >= 90:
-                    enemy.acceleration = [1,1]
-                    enemy.accel_right()
             
             size = enemy.get_size()
             
@@ -138,34 +155,22 @@ class Jogo:
             for enemy in virii:
                 k = random.randint(1,100)
                 if 1<=k<50:
-                    enemy.acceleration = [0.3,0.3]
                     enemy.accel_left()
-                if 40<=k<70 :
-                    enemy.acceleration = [0.3,0.3]
+                    
+                if 40<=k<70:
                     enemy.accel_right()
-                
-                pos = list(enemy.get_pos())
-                
-                
-            #     if r < 50:
-            #         enemy.acceleration = [1, 1]
-            #         en.accel_left()
-        # if self.nivel >= 1 and r <= 30:
-        #     enemy2 = Virus([0, 0])
-        #     enemy2.set_lives(pontos/500+1)
-        #     enemy2.acceleration = [1,1]
-            
+   
             
     def muda_nivel(self):
         xp = self.jogador.get_pontos()
-        if xp > 10 and self.level == 0:
-            self.fundo = Fundo("tile2.png")
+        if xp > 50:
+            self.fundo = Fundo("space1.png")
             self.nivel = 1
-            self.jogador.set_lives(self.jogador.get_lives() + 3)
-        elif xp > 50 and self.level == 1:
-            self.fundo = Fundo("tile3.phunter.update(self.jogador)ng")
-            self.nivel = 2
-            self.jogador.set_lives(self.player.get_lives() + 6)
+            # self.jogador.set_lives(self.jogador.get_lives() + 3)
+        # elif xp > 50 and self.level == 1:
+            # self.fundo = Fundo("tile3.phunter.update(self.jogador)ng")
+        #     self.nivel = 2
+        #     self.jogador.set_lives(self.player.get_lives() + 6)
 
     def atualiza_elementos(self, dt):
         self.fundo.update(dt)
@@ -217,6 +222,11 @@ class Jogo:
         # Verifica se o personagem trombou em algum inimigo
         self.verifica_impactos(self.jogador, self.elementos["virii"],
                                self.jogador.colisão)
+        vida = self.jogador.get_lives()
+        #verifica se o jogador encontrou alguma vida
+        self.verifica_impactos(self.jogador, self.elementos["coracoes"],
+                               self.jogador.colisão_hp)
+        
         if self.jogador.morto:
             # self.run = False
             self.jogador_perdeu = True
@@ -291,6 +301,7 @@ class Jogo:
         self.elementos['huns'] = pygame.sprite.RenderPlain(Virus([120, 50]))
         self.elementos['jogador'] = pygame.sprite.RenderPlain(self.jogador)
         self.elementos['tiros'] = pygame.sprite.RenderPlain()
+        self.elementos['coracoes'] = pygame.sprite.RenderPlain()
         self.elementos['tiros_inimigo'] = pygame.sprite.RenderPlain()
         
         while self.run:
@@ -314,6 +325,7 @@ class Jogo:
             self.menu_inicial()
             self.msg_fim_de_jogo()
             self.msg_pause()
+            self.muda_nivel()
             
             
             # texto = self.fonte.render(f"Vidas: {self.jogador.get_lives()}", True, (255, 255, 255), (0, 0, 0))
@@ -343,6 +355,9 @@ class Nave(ElementoSprite):
             self.kill()
         else:
             self.set_lives(self.get_lives() - 1)
+            
+    def colisão_hp(self):
+            self.set_lives(self.get_lives() + 1)
 
     def atira(self, lista_de_tiros, image=None):
         s = list(self.get_speed())
@@ -477,8 +492,14 @@ class Tiro(ElementoSprite):
         super().__init__(image, position, speed, new_size)
         if list is not None:
             self.add(list)
-
-
+            
+class Vida(Nave):
+    def __init__(self, position, lives=1, speed=None, image=None, size=(60, 60)):
+         if not image:
+            image = "coracao.png"
+         super().__init__(position, lives, speed, image, size)
+        
+        
 if __name__ == '__main__':
     J = Jogo(fullscreen=False)
     J.loop()
