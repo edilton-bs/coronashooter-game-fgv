@@ -162,10 +162,11 @@ class Jogo:
    
             
     def muda_nivel(self):
-        xp = self.jogador.get_pontos()
-        if xp > 50:
+        
+        if self.nivel % 2  == 0 and self.nivel > 0:
             self.fundo = Fundo("space1.png")
-            self.nivel = 1
+        if self.nivel % 2 > 0 and self.nivel > 0:
+            self.fundo = Fundo("space.png")
             # self.jogador.set_lives(self.jogador.get_lives() + 3)
         # elif xp > 50 and self.level == 1:
             # self.fundo = Fundo("tile3.phunter.update(self.jogador)ng")
